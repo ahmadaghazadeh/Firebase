@@ -1,2 +1,2 @@
 # Firebase
-Simple project is used MVVM,Firebase-auth,Firebase-database
+Simple project used MVVM,Firebase-auth,Firebase-database
