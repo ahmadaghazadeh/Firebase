@@ -7,6 +7,7 @@ import com.github.ahmadaghazadeh.firebase.utils.common.RunnableIn;
 import com.github.ahmadaghazadeh.firebase.utils.common.RunnableMethod;
 import com.github.ahmadaghazadeh.firebase.utils.common.RunnableModel;
 import com.github.ahmadaghazadeh.firebase.utils.common.SimpleAsyncTask;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.lang.ref.WeakReference;
 
@@ -57,4 +58,5 @@ public abstract class BaseViewModel<N extends INavigator> extends ViewModel {
         SimpleAsyncTask simpleAsyncTask = new SimpleAsyncTask(null, method, postInternal);
         simpleAsyncTask.execute();
     }
+
 }
