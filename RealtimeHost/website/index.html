@@ -6,12 +6,15 @@
     <title>Welcome to Firebase Hosting</title>
 
     <!-- update the version number as needed -->
-    <script defer src="/__/firebase/5.9.4/firebase-app.js"></script>
+    <script defer src="/__/firebase/5.10.0/firebase-app.js"></script>
     <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/5.9.4/firebase-auth.js"></script>
-    <script defer src="/__/firebase/5.9.4/firebase-database.js"></script>
-    <script defer src="/__/firebase/5.9.4/firebase-messaging.js"></script>
-    <script defer src="/__/firebase/5.9.4/firebase-storage.js"></script> 
+    <script defer src="/__/firebase/5.10.0/firebase-auth.js"></script>
+    <script defer src="/__/firebase/5.10.0/firebase-database.js"></script>
+    <script defer src="/__/firebase/5.10.0/firebase-messaging.js"></script>
+    <script defer src="/__/firebase/5.10.0/firebase-storage.js"></script>
+	<script src="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.js"></script>
+<link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/3.5.2/firebaseui.css" />
+
     <!-- initialize the SDK after all desired features are loaded -->
     <script defer src="/__/firebase/init.js"></script>
 
@@ -38,20 +41,15 @@
       <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
     </div>
     <p id="load">Firebase SDK Loading&hellip;</p>
-
+    <p id="database"> </p>
+    xp:<p id="xp">errorCode </p>
+    <p id="errorMessage"> errorMessage</p>
+    <p id="userName"> userName</p> 
     <script>
 	
-	var config = {
-		apiKey: "AAAAanKkdM8:APA91bEaljSTg3n97aAyEXOqbW6DromzlwiQxRqThW9T1vaOu0gOvwxc5oM2_kNQXKEViD-OxvqbjbXckM6yvi8MtsXbN6Ysu8BiXrLrFlZdgIVBw-T4Lk3c_rb2xxGKT7Kml0HyZnJ8",
-		authDomain: "base-userinfo.firebaseapp.com",
-		databaseURL: "https://base-userinfo.firebaseio.com/",
-		storageBucket: "bucket.appspot.com"
-	  };
-	  firebase.initializeApp(config);
-
-	  // Get a reference to the database service
-	  var database = firebase.database();
-  
+	
+	   
+	  
       document.addEventListener('DOMContentLoaded', function() {
         // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
         // // The Firebase SDK is initialized and available here!
@@ -63,6 +61,84 @@
         //
         // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
 
+
+      <!-- var config = { -->
+		<!-- apiKey: "AAAAanKkdM8:APA91bEaljSTg3n97aAyEXOqbW6DromzlwiQxRqThW9T1vaOu0gOvwxc5oM2_kNQXKEViD-OxvqbjbXckM6yvi8MtsXbN6Ysu8BiXrLrFlZdgIVBw-T4Lk3c_rb2xxGKT7Kml0HyZnJ8", -->
+		<!-- authDomain: "base-userinfo.firebaseapp.com", -->
+		<!-- databaseURL: "https://base-userinfo.firebaseio.com", -->
+		<!-- storageBucket: "bucket.appspot.com" -->
+	  <!-- }; -->
+	  <!-- firebase.initializeApp(config); -->
+ 
+ 
+ 
+
+<!-- firebase.auth().createUserWithEmailAndPassword("Ahmad.aghazadeh.a@gmail.com", "asd123").catch(function(error) { -->
+  <!-- // Handle Errors here. -->
+  <!-- var errorCode = error.code; -->
+  <!-- document.getElementById('errorCode').innerHTML = errorCode; -->
+  <!-- var errorMessage = error.message; -->
+  <!-- document.getElementById('errorMessage').innerHTML = errorMessage; -->
+  <!-- // ... -->
+<!-- }); -->
+
+firebase.auth().signInWithEmailAndPassword("Ahmad.aghazadeh.a@gmail.com", "asd123").catch(function(error) {
+  // Handle Errors here.
+  var errorCode = error.code;
+  document.getElementById('errorCode').innerHTML = errorCode;
+  var errorMessage = error.message;
+  document.getElementById('errorMessage').innerHTML = errorMessage;
+  // ...
+});
+
+firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    // User is signed in.
+    var displayName = user.displayName;
+    var email = user.email;
+    var emailVerified = user.emailVerified;
+    var photoURL = user.photoURL;
+    var isAnonymous = user.isAnonymous;
+    var uid = user.uid;
+    var providerData = user.providerData;
+    
+	document.getElementById('userName').innerHTML = displayName;
+	document.getElementById('errorMessage').innerHTML = email;
+	
+	  var database = firebase.database();
+	   var userId = user.uid;
+	   
+	   database.ref("users").on( "child_added", function (snapshot) {
+			var data = snapshot.val();
+			var message = data.xp;
+
+			if (message != undefined)
+			{
+			  document.getElementById('xp').innerHTML =message;
+			}
+		});
+		
+		database.child('users').child(uid).on('value', function (snapshot) {
+			var data = snapshot.val();
+			var message = data.email;
+
+			if (message != undefined)
+			{
+			 document.getElementById('errorCode').innerHTML =message;
+			}
+		});
+
+		 
+    // ...
+  } else {
+    // User is signed out.
+    // ...
+  }
+});
+
+
+	 
+		
         try {
           let app = firebase.app();
           let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');

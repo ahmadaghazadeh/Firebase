@@ -7,6 +7,7 @@ import android.util.Log;
 
 import com.github.ahmadaghazadeh.firebase.di.AppComponent;
 import com.github.ahmadaghazadeh.firebase.di.DaggerAppComponent;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.crash.FirebaseCrash;
 
@@ -30,6 +31,7 @@ public class BaseApp extends DaggerApplication{
         Thread.setDefaultUncaughtExceptionHandler(this::handleUncaughtException);
         AppComponent component = DaggerAppComponent.builder().getApp(this).build();
         component.inject(this);
+        FirebaseApp.initializeApp(this, C.baseUserInfo, "base-userinfo");
         return component;
     }
 

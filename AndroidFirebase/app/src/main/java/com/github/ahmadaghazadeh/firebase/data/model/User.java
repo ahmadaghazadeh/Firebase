@@ -1,12 +1,15 @@
 package com.github.ahmadaghazadeh.firebase.data.model;
 
 public class User {
+    private String uid;
     private String email;
     private String nickName;
+    private int xp=11;
 
     public User() {
     }
-    public User(String email, String nickName) {
+    public User(String uid, String email, String nickName) {
+        this.uid = uid;
         this.email = email;
         this.nickName = nickName;
     }
@@ -35,5 +38,22 @@ public class User {
 
     public void setAdvertise(Advertise advertise) {
         this.advertise = advertise;
+    }
+
+    public int getXp() {
+        return xp;
+    }
+
+    public void setXp(int xp) {
+        this.xp = xp;
+    }
+
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
     }
 }

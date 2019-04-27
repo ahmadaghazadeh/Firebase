@@ -12,6 +12,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.github.ahmadaghazadeh.firebase.R;
+import com.github.ahmadaghazadeh.firebase.app.C;
 import com.github.ahmadaghazadeh.firebase.databinding.ActivityLoginBinding;
 import com.github.ahmadaghazadeh.firebase.utils.base.activity.BaseActivity;
 import com.github.ahmadaghazadeh.firebase.utils.exception.ApiException;
@@ -24,6 +25,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -41,6 +43,8 @@ public class LoginActivity extends BaseActivity<ActivityLoginBinding, LoginViewM
     @Inject
     ViewModelProvider.Factory factory;
     int RC_SIGN_IN=1001;
+
+    int counter=1;
 
     public static Intent newInstance(Context context) {
         return new Intent(context, LoginActivity.class);
@@ -66,7 +70,7 @@ public class LoginActivity extends BaseActivity<ActivityLoginBinding, LoginViewM
     protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             mViewModel.setNavigator(this);
-            FirebaseApp.initializeApp(this);
+
 
             mViewModel.init();
           GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -74,7 +78,8 @@ public class LoginActivity extends BaseActivity<ActivityLoginBinding, LoginViewM
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
-        mAuth = FirebaseAuth.getInstance();
+        FirebaseApp userInfoFireBase = FirebaseApp.getInstance("base-userinfo");
+        mAuth = FirebaseAuth.getInstance(userInfoFireBase);
     }
     private void revokeAccess() {
         // Firebase sign out
@@ -189,5 +194,14 @@ public class LoginActivity extends BaseActivity<ActivityLoginBinding, LoginViewM
                         Toast.makeText(LoginActivity.this, token, Toast.LENGTH_SHORT).show();
                     }
                 });
+
+        counter++;
+        Bundle bundle = new Bundle();
+        bundle.putString("UserName", "Aghazadeh");
+        bundle.putString(FirebaseAnalytics.Param.ITEM_ID, "counter");
+        bundle.putString(FirebaseAnalytics.Param.ITEM_NAME, ""+counter);
+        bundle.putString(FirebaseAnalytics.Param.CONTENT_TYPE, "image");
+        mFirebaseAnalytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT, bundle);
+
     }
 }

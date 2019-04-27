@@ -3,21 +3,28 @@ package com.github.ahmadaghazadeh.firebase.ui.login;
 
 import android.arch.lifecycle.MutableLiveData;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.crashlytics.android.Crashlytics;
 import com.github.ahmadaghazadeh.firebase.data.local.pref.IAppPref;
 import com.github.ahmadaghazadeh.firebase.data.model.User;
 import com.github.ahmadaghazadeh.firebase.data.remote.IRepository;
 import com.github.ahmadaghazadeh.firebase.utils.base.BaseViewModel;
+import com.github.ahmadaghazadeh.firebase.utils.common.RunnableIn;
 import com.github.ahmadaghazadeh.firebase.utils.exception.BaseException;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -29,6 +36,7 @@ public class LoginViewModel extends BaseViewModel<ILoginNavigator> {
     public MutableLiveData<String> nickName = new MutableLiveData<>();
     public MutableLiveData<String> phone = new MutableLiveData<>();
     private FirebaseAuth mAuth;
+    FirebaseFirestore db;
 
     @Inject
     public LoginViewModel() {
@@ -36,7 +44,9 @@ public class LoginViewModel extends BaseViewModel<ILoginNavigator> {
     }
 
     public void init() {
-        mAuth = FirebaseAuth.getInstance();
+        FirebaseApp userInfoFireBase = FirebaseApp.getInstance("base-userinfo");
+          db = FirebaseFirestore.getInstance();
+        mAuth = FirebaseAuth.getInstance(userInfoFireBase);
         email.setValue("Ahmad.aghazadeh.a@gmail.com");
         password.setValue("asd123");
         nickName.setValue("Ahmad Aghazadeh");
@@ -48,41 +58,39 @@ public class LoginViewModel extends BaseViewModel<ILoginNavigator> {
     @Inject
     IRepository repository;
 
-    public void onClickLogin(){
-        login(email.getValue(),password.getValue());
+    public void onClickLogin() {
+        login(email.getValue(), password.getValue());
     }
 
-    public void onClickCrash(){
+    public void onClickCrash() {
         Crashlytics.getInstance().crash();
     }
-    public void onClickSignin(){
-        signin(email.getValue(),password.getValue(),nickName.getValue());
+
+    public void onClickSignin() {
+        signin(email.getValue(), password.getValue(), nickName.getValue());
     }
-    public void onClickClear(){
+
+    public void onClickClear() {
         appPref.putUserId("");
     }
 
-    public void onClickLoginGoogle(){
+    public void onClickLoginGoogle() {
         getNavigator().googleSignIn();
     }
 
-    public void onClickFirebaseInvites(){
+    public void onClickFirebaseInvites() {
         getNavigator().FirebaseInvites();
     }
 
-    public void onClickSignOutGoogle(){
+    public void onClickSignOutGoogle() {
         getNavigator().signOutGoogle();
 
     }
 
 
-    public String  putNewUser(String email, String nickName) throws BaseException {
-        String userId = appPref.getUserId();
-        if (userId.isEmpty()) {
-            User user = new User(email, nickName);
-            userId= repository.putUser(user);
-        }
-        return userId;
+    public void putNewUser(String uid,String email, String nickName) throws BaseException {
+        User user = new User(uid, email, nickName);
+        repository.putUser(user);
     }
 
     private void signin(String email, String password, String nickName) {
@@ -92,11 +100,15 @@ public class LoginViewModel extends BaseViewModel<ILoginNavigator> {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                            //  FirebaseUser user = mAuth.getCurrentUser();
+                            //
                             try {
-                                String userId= putNewUser(email, nickName);
-                                appPref.putUserId(userId);
-                                getNavigator().registerFCM();
+                                FirebaseUser user = mAuth.getCurrentUser();
+                                if (user != null) {
+
+                                    putNewUser(user.getUid(),user.getEmail(), nickName);
+                                    appPref.putUserId(user.getUid());
+                                    getNavigator().registerFCM();
+                                }
                             } catch (BaseException e) {
                                 getNavigator().handleError(e);
                             }
@@ -117,19 +129,19 @@ public class LoginViewModel extends BaseViewModel<ILoginNavigator> {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
-                             repository.userEmailListener(email, new ValueEventListener() {
-                                 @Override
-                                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                     appPref.putUserId(dataSnapshot.getChildren().iterator().next().getKey());
-                                     getNavigator().hideProgress();
-                                 }
+                            repository.userEmailListener(email, new RunnableIn<User>() {
+                                @Override
+                                public void run(User param) {
+                                    appPref.putUserId(param.getUid());
+                                    getNavigator().hideProgress();
+                                }
 
-                                 @Override
-                                 public void onCancelled(@NonNull DatabaseError databaseError) {
-                                     getNavigator().handleError(databaseError.toException());
-                                     getNavigator().hideProgress();
-                                 }
-                             });
+                                @Override
+                                public void onError(Exception ex) {
+                                    getNavigator().handleError(ex);
+                                    getNavigator().hideProgress();
+                                }
+                            });
 
                         } else {
                             getNavigator().handleError(task.getException());
@@ -138,6 +150,8 @@ public class LoginViewModel extends BaseViewModel<ILoginNavigator> {
 
                     }
                 });
+
+
     }
 
     public void SignInGoogleAuto(FirebaseUser currentUser) {
@@ -146,26 +160,49 @@ public class LoginViewModel extends BaseViewModel<ILoginNavigator> {
 
     public void checkNewUser(String email, String displayName) {
         getNavigator().showProgress(true);
-        repository.userEmailListener(email, new ValueEventListener() {
+
+        repository.userEmailListener(email, new RunnableIn<User>() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if(!dataSnapshot.getChildren().iterator().hasNext()){
-                    try {
-                       String userId= putNewUser( email,displayName);
-                        appPref.putUserId(userId);
-                        getNavigator().registerFCM();
-                    } catch (BaseException e) {
-                        getNavigator().handleError( e);
-                    }
+            public void run(User param) {
+                try {
+                    putNewUser(param.getUid(),param.getEmail(), displayName);
+                    appPref.putUserId(param.getUid());
+                    getNavigator().registerFCM();
+                } catch (BaseException e) {
+                    getNavigator().handleError(e);
                 }
-                getNavigator().hideProgress();
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                getNavigator().handleError(databaseError.toException());
+            public void onError(Exception ex) {
+                getNavigator().handleError(ex);
                 getNavigator().hideProgress();
             }
         });
+
+    }
+
+    public void onClickFireStore(){
+        // Create a new user with a first and last name
+        Map<String, Object> user = new HashMap<>();
+        user.put("first", "Ada");
+        user.put("last", "Lovelace");
+        user.put("born", 1815);
+
+// Add a new document with a generated ID
+        db.collection("users")
+                .add(user)
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        Log.d("FireStore", "DocumentSnapshot added with ID: " + documentReference.getId());
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w("FireStore", "Error adding document", e);
+                    }
+                });
     }
 }

@@ -31,27 +31,45 @@ public abstract class BaseViewModel<N extends INavigator> extends ViewModel {
             return null;
         };
 
-        RunnableIn<RunnableModel> postInternal = (param) -> {
-            if (param.getException() != null) {
-                getNavigator().handleError(param.getException());
+        RunnableIn<RunnableModel> postInternal = new RunnableIn<RunnableModel>() {
+            @Override
+            public void run(RunnableModel param) {
+                if (param.getException() != null) {
+                    getNavigator().handleError(param.getException());
+                }
+                if(post!=null){
+                    post.run(param);
+                }
+                getNavigator().hideProgress();
             }
-            if(post!=null){
-                post.run(param);
+
+            @Override
+            public void onError(Exception ex) {
+
             }
-            getNavigator().hideProgress();
         };
+
 
         SimpleAsyncTask simpleAsyncTask = new SimpleAsyncTask(pre, method, postInternal);
         simpleAsyncTask.execute();
     }
 
     public void runAsyncTask(RunnableMethod method, RunnableIn post) {
-        RunnableIn<RunnableModel> postInternal = (param) -> {
-            if (param.getException() != null) {
-                getNavigator().toast(param.getException().toString());
+        RunnableIn<RunnableModel> postInternal =new RunnableIn<RunnableModel>() {
+            @Override
+            public void run(RunnableModel param) {
+                if (param.getException() != null) {
+                    getNavigator().toast(param.getException().toString());
+                }
+                if(post!=null){
+                    post.run(param);
+
+                }
             }
-            if(post!=null){
-                post.run(param);
+
+            @Override
+            public void onError(Exception ex) {
+
             }
         };
 
